@@ -31,6 +31,12 @@ const questionGenerators = {
         answer = Math.floor(Math.random() * 5) + 1;
         num1 = num2 * answer; // Ensure clean division
         break;
+      default:
+        // Fallback to addition if operation is somehow invalid
+        num1 = Math.floor(Math.random() * 10);
+        num2 = Math.floor(Math.random() * 10);
+        answer = num1 + num2;
+        break;
     }
 
     return {
