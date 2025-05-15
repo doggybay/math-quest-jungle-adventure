@@ -28,13 +28,18 @@
 
 .star {
   font-size: 3rem;
-  animation: starPop 0.5s ease-out forwards;
-  opacity: 0;
+  opacity: 0.3;
+  transition: all 0.3s ease;
 }
 
-.star:nth-child(1) { animation-delay: 0.2s; }
-.star:nth-child(2) { animation-delay: 0.4s; }
-.star:nth-child(3) { animation-delay: 0.6s; }
+.star.earned {
+  opacity: 1;
+  animation: starPop 0.5s ease-out forwards;
+}
+
+.star:nth-child(1).earned { animation-delay: 0.2s; }
+.star:nth-child(2).earned { animation-delay: 0.4s; }
+.star:nth-child(3).earned { animation-delay: 0.6s; }
 
 .reward-message {
   font-size: 1.5rem;
@@ -48,7 +53,14 @@
 .dancing-character {
   font-size: 5rem;
   display: inline-block;
+}
+
+.dancing-character.dance {
   animation: dance 1s infinite;
+}
+
+.dancing-character.sad {
+  animation: sad 1s infinite;
 }
 
 .button-container {
@@ -89,7 +101,7 @@
 
 @keyframes starPop {
   0% {
-    opacity: 0;
+    opacity: 0.3;
     transform: scale(0);
   }
   50% {
@@ -108,5 +120,14 @@
   }
   50% {
     transform: rotate(10deg);
+  }
+}
+
+@keyframes sad {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
   }
 } 

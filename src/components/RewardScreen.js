@@ -1,41 +1,82 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useGame } from '../context/GameContext';
 import './RewardScreen.css';
 
 const RewardScreen = () => {
   const navigate = useNavigate();
-  const stars = 3; // This would come from game logic in a real implementation
+  const location = useLocation();
+  const { correct, attempts } = location.state || { correct: false, attempts: 0 };
+  const { setTotalStars, totalStars, currentLevel, setCurrentLevel } = useGame();
+
+  const getStars = () => {
+    if (!correct) return 0;
+    if (attempts === 0) return 3;
+    if (attempts === 1) return 2;
+    return 1;
+  };
+
+  const stars = getStars();
+
+  useEffect(() => {
+    setTotalStars(totalStars + stars);
+  }, []);
+
+  const handleNextLevel = () => {
+    setCurrentLevel(currentLevel + 1);
+    navigate('/levels');
+  };
+
+  const handleTryAgain = () => {
+    navigate('/play');
+  };
 
   return (
     <div className="reward-container">
       <div className="reward-content">
-        <h1>🎉 Well Done! 🎉</h1>
+        <h1>
+          {correct ? '🎉 Well Done! 🎉' : '💪 Keep Trying! 💪'}
+        </h1>
         
         <div className="stars-container">
-          {Array.from({ length: stars }, (_, i) => (
-            <span key={i} className="star">⭐</span>
+          {Array.from({ length: 3 }, (_, i) => (
+            <span 
+              key={i} 
+              className={`star ${i < stars ? 'earned' : ''}`}
+            >
+              ⭐
+            </span>
           ))}
         </div>
 
-        <p className="reward-message">You earned {stars} stars!</p>
+        <p className="reward-message">
+          {correct 
+            ? `You earned ${stars} stars!`
+            : 'Don\'t give up! Try again!'}
+        </p>
 
         <div className="character-container">
-          <span className="dancing-character">🐒</span>
+          <span className={`dancing-character ${correct ? 'dance' : 'sad'}`}>
+            {correct ? '🐒' : '😢'}
+          </span>
         </div>
 
         <div className="button-container">
-          <button 
-            className="next-level-button"
-            onClick={() => navigate('/levels')}
-          >
-            Next Level →
-          </button>
-          <button 
-            className="try-again-button"
-            onClick={() => navigate('/play')}
-          >
-            Try Again ↺
-          </button>
+          {correct ? (
+            <button 
+              className="next-level-button"
+              onClick={handleNextLevel}
+            >
+              Next Level →
+            </button>
+          ) : (
+            <button 
+              className="try-again-button"
+              onClick={handleTryAgain}
+            >
+              Try Again ↺
+            </button>
+          )}
         </div>
       </div>
     </div>
