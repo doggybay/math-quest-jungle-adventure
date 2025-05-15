@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue with correct answer being revealed on wrong attempts
 - Fixed question cycling behavior
 - Improved state management for attempts and wrong questions tracking
+- Fixed React Hook useEffect missing dependencies in RewardScreen
+- Added default case to arithmetic question generator switch statement in GameContext
 
 ## [0.0.30] - 2025-05-14
 ### Added
