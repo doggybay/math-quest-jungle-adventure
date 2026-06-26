@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import GamePlay from './GamePlay';
 
 const mockNavigate = jest.fn();
+const mockCompleteCurrentLevel = jest.fn();
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -38,14 +39,21 @@ jest.mock('../context/GameContext', () => {
       const generateAnswers = (correctAnswer) => [correctAnswer, '0', '9'];
 
       return {
+        attempts,
+        completeCurrentLevel: mockCompleteCurrentLevel,
+        currentLevel: 1,
+        currentLevelConfig: {
+          id: 1,
+          name: 'Canopy Trail',
+          topic: 'Mixed Basics',
+          questionCount: 4,
+        },
         currentQuestion,
         generateQuestion,
         generateAnswers,
         setAttempts,
-        attempts,
         setScore,
         score,
-        currentLevel: 1,
       };
     },
   };
@@ -57,6 +65,7 @@ describe('GamePlay', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockNavigate.mockReset();
+    mockCompleteCurrentLevel.mockReset();
     __resetMockGame();
   });
 
