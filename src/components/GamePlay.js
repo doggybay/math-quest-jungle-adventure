@@ -8,9 +8,9 @@ const GamePlay = () => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [answers, setAnswers] = useState([]);
-  const [wrongQuestionsCount, setWrongQuestionsCount] = useState(0);
+  const [, setWrongQuestionsCount] = useState(0);
   const [isCorrect, setIsCorrect] = useState(false);
-  
+
   const {
     currentQuestion,
     generateQuestion,
@@ -22,7 +22,6 @@ const GamePlay = () => {
     currentLevel
   } = useGame();
 
-  // Generate initial question only when component mounts or level changes
   useEffect(() => {
     if (!currentQuestion) {
       const question = generateQuestion();
@@ -30,47 +29,53 @@ const GamePlay = () => {
     }
   }, [currentLevel, currentQuestion, generateQuestion, generateAnswers]);
 
+  const loadNextQuestion = () => {
+    const nextQuestion = generateQuestion();
+    setAnswers(generateAnswers(nextQuestion.answer));
+    setShowFeedback(false);
+    setSelectedAnswer(null);
+    setIsCorrect(false);
+    setAttempts(0);
+  };
+
   const handleAnswer = (answer) => {
+    const nextAttemptCount = attempts + 1;
+
     setSelectedAnswer(answer);
     setShowFeedback(true);
-    setAttempts(attempts + 1);
+    setAttempts(nextAttemptCount);
 
     if (answer === currentQuestion.answer) {
       setIsCorrect(true);
       setScore(score + 1);
       setTimeout(() => {
-        // Generate new question instead of navigating to reward
-        const newQuestion = generateQuestion();
-        setAnswers(generateAnswers(newQuestion.answer));
-        setShowFeedback(false);
-        setSelectedAnswer(null);
-        setIsCorrect(false);
-        setAttempts(0); // Reset attempts for new question
+        loadNextQuestion();
       }, 1000);
-    } else if (attempts < 1) {
+      return;
+    }
+
+    if (nextAttemptCount < 2) {
       setTimeout(() => {
         setShowFeedback(false);
         setSelectedAnswer(null);
       }, 1000);
-    } else {
-      // Question failed after 2 attempts
-      setWrongQuestionsCount(wrongQuestionsCount + 1);
-      
-      if (wrongQuestionsCount >= 2) {
-        setTimeout(() => {
-          navigate('/levels');
-        }, 1000);
-      } else {
-        setTimeout(() => {
-          // Move to next question
-          const newQuestion = generateQuestion();
-          setAnswers(generateAnswers(newQuestion.answer));
-          setShowFeedback(false);
-          setSelectedAnswer(null);
-          setAttempts(0); // Reset attempts for new question
-        }, 1000);
-      }
+      return;
     }
+
+    setWrongQuestionsCount((count) => {
+      const nextWrongQuestionsCount = count + 1;
+
+      setTimeout(() => {
+        if (nextWrongQuestionsCount >= 3) {
+          navigate('/levels');
+          return;
+        }
+
+        loadNextQuestion();
+      }, 1000);
+
+      return nextWrongQuestionsCount;
+    });
   };
 
   if (!currentQuestion) {
@@ -127,4 +132,4 @@ const GamePlay = () => {
   );
 };
 
-export default GamePlay; 
+export default GamePlay;
