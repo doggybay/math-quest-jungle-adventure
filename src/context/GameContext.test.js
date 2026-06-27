@@ -8,18 +8,35 @@ const ContextProbe = () => {
   const {
     levels,
     currentLevelConfig,
+    currentEncounter,
     levelProgress,
     bananas,
     completeCurrentLevel,
+    resolveEncounter,
     selectLevel,
+    startAdventure,
   } = useGame();
 
   return (
     <div>
       <div data-testid="levels">{JSON.stringify(levels)}</div>
       <div data-testid="current-level">{currentLevelConfig?.id}</div>
+      <div data-testid="current-encounter">{currentEncounter?.title ?? 'none'}</div>
       <div data-testid="progress">{JSON.stringify(levelProgress)}</div>
       <div data-testid="bananas">{bananas}</div>
+      <button onClick={() => startAdventure()}>start adventure</button>
+      <button
+        onClick={() =>
+          resolveEncounter({
+            success: true,
+            score: 2,
+            questionsAnswered: 2,
+            wrongQuestions: 0,
+          })
+        }
+      >
+        clear encounter
+      </button>
       <button
         onClick={() =>
           completeCurrentLevel({
@@ -96,5 +113,28 @@ describe('GameProvider progression', () => {
     });
 
     expect(screen.getByTestId('current-level')).toHaveTextContent('2');
+  });
+
+  test('creates a multi-encounter route and advances to the next node before level completion', () => {
+    render(
+      <GameProvider>
+        <ContextProbe />
+      </GameProvider>
+    );
+
+    expect(screen.getByTestId('current-encounter')).toHaveTextContent('none');
+
+    act(() => {
+      screen.getByRole('button', { name: /start adventure/i }).click();
+    });
+
+    expect(screen.getByTestId('current-encounter')).toHaveTextContent('Vine Bridge');
+
+    act(() => {
+      screen.getByRole('button', { name: /clear encounter/i }).click();
+    });
+
+    expect(screen.getByTestId('current-encounter')).toHaveTextContent('Monkey Rescue');
+    expect(screen.getByTestId('progress').textContent).not.toContain('"1":{"completed":true');
   });
 });
