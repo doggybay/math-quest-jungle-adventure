@@ -16,35 +16,39 @@ const GamePlay = () => {
   const [isCorrect, setIsCorrect] = useState(false);
 
   const {
+    adventure,
     attempts,
-    completeCurrentLevel,
+    currentEncounter,
     currentLevelConfig,
     currentQuestion,
     generateAnswers,
     generateQuestion,
+    resolveEncounter,
     score,
     setAttempts,
     setScore,
   } = useGame();
 
   const questionsRemaining = useMemo(
-    () => Math.max(currentLevelConfig.questionCount - questionsAnswered, 0),
-    [currentLevelConfig.questionCount, questionsAnswered]
+    () => Math.max((currentEncounter?.questionCount ?? 0) - questionsAnswered, 0),
+    [currentEncounter, questionsAnswered]
   );
 
   useEffect(() => {
-    setScore(0);
+    if (!currentEncounter) {
+      navigate('/map');
+      return;
+    }
+
+    const question = generateQuestion();
+    setAnswers(generateAnswers(question.answer));
     setAttempts(0);
     setWrongQuestionsCount(0);
     setQuestionsAnswered(0);
-  }, [currentLevelConfig.id, setAttempts, setScore]);
-
-  useEffect(() => {
-    if (!currentQuestion) {
-      const question = generateQuestion();
-      setAnswers(generateAnswers(question.answer));
-    }
-  }, [currentQuestion, currentLevelConfig.id, generateAnswers, generateQuestion]);
+    setShowFeedback(false);
+    setSelectedAnswer(null);
+    setIsCorrect(false);
+  }, [currentEncounter, generateAnswers, generateQuestion, navigate, setAttempts]);
 
   const loadNextQuestion = () => {
     const nextQuestion = generateQuestion();
@@ -55,32 +59,31 @@ const GamePlay = () => {
     setAttempts(0);
   };
 
-  const finishLevel = ({ finalScore, totalAnswered, totalWrongQuestions, success }) => {
-    const result = success
-      ? completeCurrentLevel({
-          score: finalScore,
-          questionsAnswered: totalAnswered,
-          wrongQuestions: totalWrongQuestions,
-        })
-      : {
-          levelId: currentLevelConfig.id,
-          levelName: currentLevelConfig.name,
-          starsEarned: 0,
-          bananasEarned: 0,
-          score: finalScore,
-          questionsAnswered: totalAnswered,
-          wrongQuestions: totalWrongQuestions,
-          nextUnlockedLevel: currentLevelConfig.id,
-          nextLevelId: currentLevelConfig.id,
-        };
-
-    navigate('/reward', {
-      state: {
-        result,
-        success,
-        goalQuestions: currentLevelConfig.questionCount,
-      },
+  const finishRun = ({ finalScore, totalAnswered, totalWrongQuestions, success }) => {
+    const resolution = resolveEncounter({
+      success,
+      score: finalScore,
+      questionsAnswered: totalAnswered,
+      wrongQuestions: totalWrongQuestions,
     });
+
+    if (resolution.status === 'continue') {
+      navigate('/map');
+      return;
+    }
+
+    if (resolution.status === 'completed' || resolution.status === 'failed') {
+      navigate('/reward', {
+        state: {
+          result: resolution.result,
+          success,
+          goalQuestions: adventure?.totalQuestionGoal ?? currentLevelConfig.questionCount,
+        },
+      });
+      return;
+    }
+
+    navigate('/map');
   };
 
   const handleAnswer = (answer) => {
@@ -102,8 +105,8 @@ const GamePlay = () => {
       setQuestionsAnswered(nextAnsweredCount);
 
       setTimeout(() => {
-        if (nextAnsweredCount >= currentLevelConfig.questionCount) {
-          finishLevel({
+        if (nextAnsweredCount >= currentEncounter.questionCount) {
+          finishRun({
             finalScore: nextScore,
             totalAnswered: nextAnsweredCount,
             totalWrongQuestions: wrongQuestionsCount,
@@ -127,13 +130,14 @@ const GamePlay = () => {
 
     const nextWrongQuestionsCount = wrongQuestionsCount + 1;
     const nextAnsweredCount = questionsAnswered + 1;
+    const combinedWrongQuestions = (adventure?.totalWrongQuestions ?? 0) + nextWrongQuestionsCount;
 
     setWrongQuestionsCount(nextWrongQuestionsCount);
     setQuestionsAnswered(nextAnsweredCount);
 
     setTimeout(() => {
-      if (nextWrongQuestionsCount >= MAX_WRONG_QUESTIONS) {
-        finishLevel({
+      if (combinedWrongQuestions >= MAX_WRONG_QUESTIONS) {
+        finishRun({
           finalScore: score,
           totalAnswered: nextAnsweredCount,
           totalWrongQuestions: nextWrongQuestionsCount,
@@ -142,14 +146,24 @@ const GamePlay = () => {
         return;
       }
 
+      if (nextAnsweredCount >= currentEncounter.questionCount) {
+        finishRun({
+          finalScore: score,
+          totalAnswered: nextAnsweredCount,
+          totalWrongQuestions: nextWrongQuestionsCount,
+          success: true,
+        });
+        return;
+      }
+
       loadNextQuestion();
     }, 1000);
   };
 
-  if (!currentQuestion) {
+  if (!currentQuestion || !currentEncounter) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-300 via-green-400 to-green-700 text-2xl font-bold text-yellow-100">
-        Loading question...
+        Loading encounter...
       </div>
     );
   }
@@ -159,7 +173,9 @@ const GamePlay = () => {
       <div className="flex items-center justify-between w-full max-w-3xl mb-6 px-2 gap-3">
         <div className="bg-white/85 rounded-xl px-4 py-2 shadow border-2 border-green-600 text-green-950 font-bold">
           <div>{currentLevelConfig.name}</div>
-          <div className="text-sm">{currentLevelConfig.topic}</div>
+          <div className="text-sm">
+            Encounter {currentEncounter.sequence}/{adventure?.nodes.length ?? 1}: {currentEncounter.shortLabel}
+          </div>
         </div>
         <div className="flex items-center gap-2 bg-yellow-200 bg-opacity-80 rounded-xl px-4 py-2 shadow border-2 border-yellow-400">
           <span className="text-lg font-bold text-yellow-900">🍌 x {score}</span>
@@ -175,17 +191,23 @@ const GamePlay = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-3xl mb-4 text-sm md:text-base font-bold text-green-950">
         <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Goal: {currentLevelConfig.questionCount} questions
+          Goal here: {currentEncounter.questionCount} questions
         </div>
         <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Remaining: {questionsRemaining}
+          Remaining here: {questionsRemaining}
         </div>
         <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Missed questions: {wrongQuestionsCount}/{MAX_WRONG_QUESTIONS}
+          Total misses: {(adventure?.totalWrongQuestions ?? 0) + wrongQuestionsCount}/{MAX_WRONG_QUESTIONS}
         </div>
       </div>
 
-      <div className="w-full max-w-2xl bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 mb-8 flex flex-col items-center border-4 border-green-700">
+      <div className="w-full max-w-2xl bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 mb-4 flex flex-col items-center border-4 border-green-700">
+        <div className="text-sm md:text-base font-extrabold uppercase tracking-wide text-green-700 mb-2">
+          {currentEncounter.icon} {currentEncounter.title}
+        </div>
+        <p className="text-base md:text-lg font-semibold text-green-900 text-center mb-4">
+          {currentEncounter.description}
+        </p>
         <h2 className="text-2xl md:text-3xl font-bold text-green-900 text-center mb-2 drop-shadow">
           {currentQuestion.question}
         </h2>

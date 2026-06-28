@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { buildAdventurePath } from '../data/adventureMap';
 
 const GameContext = createContext();
 
@@ -19,6 +20,29 @@ const LEVEL_DEFINITIONS = [
     allowedTopics: ['arithmetic', 'algebra'],
     questionCount: 4,
     difficulty: 'easy',
+    encounters: [
+      {
+        type: 'bridge',
+        title: 'Vine Bridge',
+        shortLabel: 'Bridge',
+        icon: '🌉',
+        description: 'Cross the hanging bridge while the canopy sways overhead.',
+      },
+      {
+        type: 'rescue',
+        title: 'Monkey Rescue',
+        shortLabel: 'Rescue',
+        icon: '🐒',
+        description: 'Help the scout monkeys regroup before the path disappears.',
+      },
+      {
+        type: 'gate',
+        title: 'Temple Gate',
+        shortLabel: 'Gate',
+        icon: '🛕',
+        description: 'Unlock the carved gate that guards the next stretch of jungle.',
+      },
+    ],
   },
   {
     id: 2,
@@ -27,6 +51,29 @@ const LEVEL_DEFINITIONS = [
     allowedTopics: ['arithmetic'],
     questionCount: 5,
     difficulty: 'easy',
+    encounters: [
+      {
+        type: 'stairs',
+        title: 'Broken Steps',
+        shortLabel: 'Steps',
+        icon: '🪜',
+        description: 'Count the safe footholds up the cracked staircase.',
+      },
+      {
+        type: 'torch',
+        title: 'Torch Gallery',
+        shortLabel: 'Gallery',
+        icon: '🔥',
+        description: 'Light the gallery in the right order to keep moving.',
+      },
+      {
+        type: 'altar',
+        title: 'Hidden Altar',
+        shortLabel: 'Altar',
+        icon: '🗿',
+        description: 'Solve the altar puzzle before the stone doors close again.',
+      },
+    ],
   },
   {
     id: 3,
@@ -35,6 +82,29 @@ const LEVEL_DEFINITIONS = [
     allowedTopics: ['algebra'],
     questionCount: 5,
     difficulty: 'medium',
+    encounters: [
+      {
+        type: 'raft',
+        title: 'Raft Crossing',
+        shortLabel: 'Raft',
+        icon: '🛶',
+        description: 'Balance the raft and read the current before it pulls you downstream.',
+      },
+      {
+        type: 'bank',
+        title: 'Crocodile Bank',
+        shortLabel: 'Bank',
+        icon: '🐊',
+        description: 'Keep the crocodiles at bay while you hold the riverbank.',
+      },
+      {
+        type: 'shrine',
+        title: 'River Shrine',
+        shortLabel: 'Shrine',
+        icon: '⛩️',
+        description: 'Unlock the shrine with the final pattern from the river spirits.',
+      },
+    ],
   },
   {
     id: 4,
@@ -43,6 +113,29 @@ const LEVEL_DEFINITIONS = [
     allowedTopics: ['geometry'],
     questionCount: 6,
     difficulty: 'medium',
+    encounters: [
+      {
+        type: 'maze',
+        title: 'Stone Maze',
+        shortLabel: 'Maze',
+        icon: '🧱',
+        description: 'Read the angles in the stone paths to avoid dead ends.',
+      },
+      {
+        type: 'pond',
+        title: 'Mirror Pond',
+        shortLabel: 'Pond',
+        icon: '🪞',
+        description: 'Use reflected shapes to reveal the hidden walkway.',
+      },
+      {
+        type: 'keeper',
+        title: 'Garden Keeper',
+        shortLabel: 'Keeper',
+        icon: '🪨',
+        description: 'Convince the ancient keeper to open the final gate.',
+      },
+    ],
   },
   {
     id: 5,
@@ -51,6 +144,29 @@ const LEVEL_DEFINITIONS = [
     allowedTopics: ['arithmetic', 'algebra', 'geometry'],
     questionCount: 7,
     difficulty: 'hard',
+    encounters: [
+      {
+        type: 'vault',
+        title: 'Outer Vault',
+        shortLabel: 'Vault',
+        icon: '🪙',
+        description: 'Unlock the outer chamber without waking the traps.',
+      },
+      {
+        type: 'chamber',
+        title: 'Echo Chamber',
+        shortLabel: 'Echo',
+        icon: '🔔',
+        description: 'Match the echoing patterns before the chamber seals.',
+      },
+      {
+        type: 'idol',
+        title: 'Idol Sanctum',
+        shortLabel: 'Sanctum',
+        icon: '✨',
+        description: 'Claim the idol by mastering every lesson the jungle taught you.',
+      },
+    ],
   },
 ];
 
@@ -208,6 +324,7 @@ export const GameProvider = ({ children }) => {
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(1);
+  const [adventure, setAdventure] = useState(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -218,9 +335,7 @@ export const GameProvider = ({ children }) => {
   }, [progress]);
 
   useEffect(() => {
-    setCurrentLevel((activeLevel) =>
-      Math.min(activeLevel, clampUnlockedLevel(progress.unlockedLevel))
-    );
+    setCurrentLevel((activeLevel) => Math.min(activeLevel, clampUnlockedLevel(progress.unlockedLevel)));
   }, [progress.unlockedLevel]);
 
   const levels = useMemo(
@@ -249,15 +364,24 @@ export const GameProvider = ({ children }) => {
     [progress.levelProgress]
   );
 
+  const currentEncounter = useMemo(() => {
+    if (!adventure) {
+      return null;
+    }
+    return adventure.nodes[adventure.currentEncounterIndex] ?? null;
+  }, [adventure]);
+
   const resetRunState = useCallback(() => {
     setCurrentQuestion(null);
     setScore(0);
     setAttempts(0);
+    setAdventure(null);
   }, []);
 
   const selectLevel = useCallback(
     (levelId) => {
       const parsedLevelId = Number(levelId);
+
       if (parsedLevelId > progress.unlockedLevel) {
         return false;
       }
@@ -268,6 +392,19 @@ export const GameProvider = ({ children }) => {
     },
     [progress.unlockedLevel, resetRunState]
   );
+
+  const startAdventure = useCallback(() => {
+    if (!currentLevelConfig) {
+      return null;
+    }
+
+    const nextAdventure = buildAdventurePath(currentLevelConfig);
+    setAdventure(nextAdventure);
+    setCurrentQuestion(null);
+    setScore(0);
+    setAttempts(0);
+    return nextAdventure;
+  }, [currentLevelConfig]);
 
   const generateQuestion = useCallback(() => {
     const availableTopics = currentLevelConfig?.allowedTopics?.length
@@ -342,28 +479,99 @@ export const GameProvider = ({ children }) => {
     [currentLevelConfig, progress]
   );
 
+  const resolveEncounter = useCallback(
+    ({ success, score: finalScore, questionsAnswered, wrongQuestions }) => {
+      if (!adventure || !currentEncounter) {
+        return {
+          status: 'missing-adventure',
+          result: null,
+        };
+      }
+
+      const nextTotalQuestionsAnswered = adventure.totalQuestionsAnswered + questionsAnswered;
+      const nextTotalWrongQuestions = adventure.totalWrongQuestions + wrongQuestions;
+      const isFinalEncounter = adventure.currentEncounterIndex >= adventure.nodes.length - 1;
+
+      if (!success) {
+        setAdventure(null);
+        setCurrentQuestion(null);
+        setAttempts(0);
+        return {
+          status: 'failed',
+          result: {
+            levelId: currentLevelConfig.id,
+            levelName: currentLevelConfig.name,
+            starsEarned: 0,
+            bananasEarned: 0,
+            score: finalScore,
+            questionsAnswered: nextTotalQuestionsAnswered,
+            wrongQuestions: nextTotalWrongQuestions,
+            nextUnlockedLevel: currentLevelConfig.id,
+            nextLevelId: currentLevelConfig.id,
+          },
+        };
+      }
+
+      if (!isFinalEncounter) {
+        setAdventure((previousAdventure) => ({
+          ...previousAdventure,
+          totalQuestionsAnswered: nextTotalQuestionsAnswered,
+          totalWrongQuestions: nextTotalWrongQuestions,
+          completedEncounters: previousAdventure.completedEncounters + 1,
+          currentEncounterIndex: previousAdventure.currentEncounterIndex + 1,
+        }));
+        setCurrentQuestion(null);
+        setAttempts(0);
+        return {
+          status: 'continue',
+          result: null,
+        };
+      }
+
+      const completionResult = completeCurrentLevel({
+        score: finalScore,
+        questionsAnswered: nextTotalQuestionsAnswered,
+        wrongQuestions: nextTotalWrongQuestions,
+      });
+
+      setAdventure(null);
+      setCurrentQuestion(null);
+      setAttempts(0);
+
+      return {
+        status: 'completed',
+        result: completionResult,
+      };
+    },
+    [adventure, completeCurrentLevel, currentEncounter, currentLevelConfig]
+  );
+
   const resetGame = useCallback(() => {
     resetRunState();
     setCurrentLevel(1);
   }, [resetRunState]);
 
   const value = {
+    adventure,
+    attempts,
     bananas: progress.bananas,
+    completeCurrentLevel,
+    currentEncounter,
     currentLevel,
     currentLevelConfig,
     currentQuestion,
-    completeCurrentLevel,
     generateAnswers,
     generateQuestion,
     levelProgress: progress.levelProgress,
     levels,
     resetGame,
+    resolveEncounter,
     score,
     selectLevel,
     setAttempts,
-    attempts,
     setCurrentLevel,
     setScore,
+    startAdventure,
     totalStars,
   };
 

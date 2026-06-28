@@ -9,7 +9,7 @@ const LevelSelect = () => {
   const handleLevelClick = (levelId) => {
     const wasSelected = selectLevel(levelId);
     if (wasSelected) {
-      navigate('/play');
+      navigate('/map');
     }
   };
 
@@ -22,7 +22,7 @@ const LevelSelect = () => {
         Choose a Level
       </h1>
       <p className="text-lg md:text-xl font-bold text-white mb-6 text-center max-w-2xl">
-        Adventure progress is now real: clear levels, bank bananas, and unlock the deeper jungle.
+        Progress now leads into a real jungle route: each level is a chain of encounters, not one flat question blob.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-4 mb-8 text-sm md:text-base font-bold text-green-950">
@@ -39,7 +39,7 @@ const LevelSelect = () => {
           const statusLabel = level.completed
             ? `Completed · Best ${level.bestStars}★`
             : level.isUnlocked
-            ? 'Ready to play'
+            ? 'Ready to route'
             : 'Locked';
 
           return (
@@ -66,8 +66,11 @@ const LevelSelect = () => {
               <div className="text-sm md:text-base font-semibold mb-2">
                 Topic: {level.topic}
               </div>
-              <div className="text-sm md:text-base font-semibold mb-4">
+              <div className="text-sm md:text-base font-semibold mb-2">
                 Goal: {level.questionCount} questions
+              </div>
+              <div className="text-sm md:text-base font-semibold mb-4">
+                Route: {level.encounters.length} encounters
               </div>
               <div className="text-sm md:text-base font-bold">{statusLabel}</div>
             </button>
