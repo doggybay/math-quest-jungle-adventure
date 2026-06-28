@@ -7,7 +7,10 @@ const Home = () => {
   const [isMusicOn, setIsMusicOn] = React.useState(false);
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden">
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex flex-col justify-center items-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden"
+    >
       {/* Jungle leaves or background SVG could go here for more detail */}
       <div className="absolute left-4 bottom-4">
         <button
@@ -37,20 +40,25 @@ const Home = () => {
         <span className="text-[7rem] md:text-[8rem] mb-2 select-none">🐵</span>
       </div>
       <div className="flex flex-col gap-6 w-full max-w-xs mt-2">
+        <p id="home-mode-description" className="sr-only">
+          Start Adventure opens the guided route mode. Practice Mode also enters level selection without changing saved progress.
+        </p>
         <button
           className="w-full py-5 text-2xl font-bold rounded-xl bg-orange-400 hover:bg-orange-500 active:bg-orange-600 text-white shadow-xl border-4 border-orange-600 transition"
           onClick={() => navigate('/levels')}
+          aria-describedby="home-mode-description"
         >
           Start Adventure
         </button>
         <button
           className="w-full py-5 text-2xl font-bold rounded-xl bg-green-500 hover:bg-green-600 active:bg-green-700 text-white shadow-xl border-4 border-green-700 transition"
           onClick={() => navigate('/levels')}
+          aria-describedby="home-mode-description"
         >
           Practice Mode
         </button>
       </div>
-    </div>
+    </main>
   );
 };
 

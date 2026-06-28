@@ -3,6 +3,7 @@ import GamePlay from './GamePlay';
 
 const mockNavigate = jest.fn();
 const mockResolveEncounter = jest.fn();
+const mockTrackEvent = jest.fn();
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -82,6 +83,7 @@ jest.mock('../context/GameContext', () => {
         setAttempts,
         setScore,
         score,
+        trackEvent: mockTrackEvent,
       };
     },
   };
@@ -94,6 +96,7 @@ describe('GamePlay', () => {
     jest.useFakeTimers();
     mockNavigate.mockReset();
     mockResolveEncounter.mockReset();
+    mockTrackEvent.mockReset();
     mockResolveEncounter.mockReturnValue({ status: 'continue' });
     __resetMockGame();
   });

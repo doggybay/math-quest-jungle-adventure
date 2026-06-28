@@ -12,6 +12,9 @@ function App() {
   return (
     <GameProvider>
       <BrowserRouter>
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/levels" element={<LevelSelect />} />

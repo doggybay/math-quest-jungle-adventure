@@ -27,6 +27,7 @@ const GamePlay = () => {
     score,
     setAttempts,
     setScore,
+    trackEvent,
   } = useGame();
 
   const questionsRemaining = useMemo(
@@ -92,11 +93,22 @@ const GamePlay = () => {
     }
 
     const nextAttemptCount = attempts + 1;
+    const wasCorrect = answer === currentQuestion.answer;
     setSelectedAnswer(answer);
     setShowFeedback(true);
     setAttempts(nextAttemptCount);
+    trackEvent('answer_submitted', {
+      levelId: currentLevelConfig.id,
+      encounterId: currentEncounter.id,
+      encounterTitle: currentEncounter.title,
+      questionType: currentQuestion.type,
+      selectedAnswer: answer,
+      correctAnswer: currentQuestion.answer,
+      wasCorrect,
+      attemptNumber: nextAttemptCount,
+    });
 
-    if (answer === currentQuestion.answer) {
+    if (wasCorrect) {
       const nextScore = score + 1;
       const nextAnsweredCount = questionsAnswered + 1;
 
@@ -169,7 +181,10 @@ const GamePlay = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden px-2 py-4">
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden px-2 py-4"
+    >
       <div className="flex items-center justify-between w-full max-w-3xl mb-6 px-2 gap-3">
         <div className="bg-white/85 rounded-xl px-4 py-2 shadow border-2 border-green-600 text-green-950 font-bold">
           <div>{currentLevelConfig.name}</div>
@@ -236,7 +251,11 @@ const GamePlay = () => {
         ))}
       </div>
 
-      <div className="text-lg font-bold text-white bg-green-800 bg-opacity-70 rounded-xl px-6 py-2 shadow border-2 border-green-900">
+      <div
+        role="status"
+        aria-live="polite"
+        className="text-lg font-bold text-white bg-green-800 bg-opacity-70 rounded-xl px-6 py-2 shadow border-2 border-green-900"
+      >
         Attempts: {attempts}/{MAX_ATTEMPTS_PER_QUESTION}
       </div>
       {isPaused && (
@@ -244,7 +263,7 @@ const GamePlay = () => {
           Game paused. Tap play to continue.
         </div>
       )}
-    </div>
+    </main>
   );
 };
 

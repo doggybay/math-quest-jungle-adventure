@@ -18,8 +18,8 @@ const RewardScreen = () => {
 
   const handleNextAction = () => {
     if (canAdvance) {
-      selectLevel(nextLevel.id);
-      navigate('/play');
+      selectLevel(nextLevel.id, { mode: 'adventure' });
+      navigate('/map');
       return;
     }
 
@@ -27,12 +27,15 @@ const RewardScreen = () => {
   };
 
   const handleRetry = () => {
-    selectLevel(result.levelId);
-    navigate('/play');
+    selectLevel(result.levelId, { mode: 'adventure' });
+    navigate('/map');
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden px-2 py-4">
+    <main
+      id="main-content"
+      className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden px-2 py-4"
+    >
       <div className="w-full max-w-xl bg-white bg-opacity-90 rounded-2xl shadow-xl p-8 flex flex-col items-center border-4 border-green-700">
         <h1
           className={`text-3xl md:text-4xl font-extrabold text-center mb-4 ${success ? 'text-yellow-400' : 'text-red-400'} drop-shadow-lg`}
@@ -100,7 +103,7 @@ const RewardScreen = () => {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 
