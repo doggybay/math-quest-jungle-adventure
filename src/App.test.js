@@ -9,7 +9,8 @@ test('renders the jungle adventure home screen', () => {
   expect(screen.getByRole('heading', { name: /math quest/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /jungle adventure!/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /start adventure/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /practice mode/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /choose a level/i })).toBeInTheDocument();
+  expect(screen.getByText(/your level progress saves automatically/i)).toBeInTheDocument();
 
   warnSpy.mockRestore();
 });
