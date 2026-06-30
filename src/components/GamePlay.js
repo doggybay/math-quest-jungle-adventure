@@ -49,6 +49,7 @@ const GamePlay = () => {
     setShowFeedback(false);
     setSelectedAnswer(null);
     setIsCorrect(false);
+    setIsPaused(false);
   }, [currentEncounter, generateAnswers, generateQuestion, navigate, setAttempts]);
 
   const loadNextQuestion = () => {
@@ -174,7 +175,7 @@ const GamePlay = () => {
 
   if (!currentQuestion || !currentEncounter) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-300 via-green-400 to-green-700 text-2xl font-bold text-yellow-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 text-2xl font-bold text-yellow-100">
         Loading encounter...
       </div>
     );
@@ -183,84 +184,118 @@ const GamePlay = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-300 via-green-400 to-green-700 relative overflow-hidden px-2 py-4"
+      className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-green-300 via-green-400 to-green-700 px-2 py-4"
     >
-      <div className="flex items-center justify-between w-full max-w-3xl mb-6 px-2 gap-3">
-        <div className="bg-white/85 rounded-xl px-4 py-2 shadow border-2 border-green-600 text-green-950 font-bold">
-          <div>{currentLevelConfig.name}</div>
-          <div className="text-sm">
-            Encounter {currentEncounter.sequence}/{adventure?.nodes.length ?? 1}: {currentEncounter.shortLabel}
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center">
+        <div className="mb-6 flex w-full items-center justify-between gap-3 px-2">
+          <div className="rounded-xl border-2 border-green-600 bg-white/85 px-4 py-2 font-bold text-green-950 shadow">
+            <div>{currentLevelConfig.name}</div>
+            <div className="text-sm">
+              Encounter {currentEncounter.sequence}/{adventure?.nodes.length ?? 1}: {currentEncounter.shortLabel}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border-2 border-yellow-400 bg-yellow-200/80 px-4 py-2 shadow">
+            <span className="text-lg font-bold text-yellow-900">🍌 x {score}</span>
+          </div>
+          <button
+            className="rounded-full bg-green-800/80 p-3 text-2xl text-white shadow-lg transition hover:bg-green-700"
+            onClick={() => setIsPaused(true)}
+            aria-label="Pause adventure"
+          >
+            ⏸
+          </button>
+        </div>
+
+        <div className="mb-4 grid w-full max-w-3xl grid-cols-1 gap-3 text-sm font-bold text-green-950 md:grid-cols-3 md:text-base">
+          <div className="rounded-xl border-2 border-green-600 bg-white/85 px-4 py-3 shadow">
+            Goal here: {currentEncounter.questionCount} questions
+          </div>
+          <div className="rounded-xl border-2 border-green-600 bg-white/85 px-4 py-3 shadow">
+            Remaining here: {questionsRemaining}
+          </div>
+          <div className="rounded-xl border-2 border-green-600 bg-white/85 px-4 py-3 shadow">
+            Total misses: {(adventure?.totalWrongQuestions ?? 0) + wrongQuestionsCount}/{MAX_WRONG_QUESTIONS}
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-yellow-200 bg-opacity-80 rounded-xl px-4 py-2 shadow border-2 border-yellow-400">
-          <span className="text-lg font-bold text-yellow-900">🍌 x {score}</span>
+
+        <div className="mb-4 flex w-full max-w-2xl flex-col items-center rounded-2xl border-4 border-green-700 bg-white/90 p-6 shadow-xl">
+          <div className="mb-2 text-sm font-extrabold uppercase tracking-wide text-green-700 md:text-base">
+            {currentEncounter.icon} {currentEncounter.title}
+          </div>
+          <p className="mb-4 text-center text-base font-semibold text-green-900 md:text-lg">
+            {currentEncounter.description}
+          </p>
+          <h2 className="text-center text-2xl font-bold text-green-900 drop-shadow md:text-3xl">
+            {currentQuestion.question}
+          </h2>
         </div>
-        <button
-          className="bg-green-800 bg-opacity-60 rounded-full p-3 shadow-lg hover:bg-green-700 transition text-white text-2xl"
-          onClick={() => setIsPaused(!isPaused)}
-          aria-label="Pause"
+
+        <div className="mb-8 grid w-full max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
+          {answers.map((answer, index) => (
+            <button
+              key={index}
+              className={`w-full rounded-xl border-4 py-5 text-2xl font-bold transition shadow-xl ${
+                showFeedback
+                  ? isCorrect && answer === currentQuestion.answer
+                    ? 'scale-105 border-green-700 bg-green-400 text-white'
+                    : selectedAnswer === answer && answer !== currentQuestion.answer
+                    ? 'shake border-red-700 bg-red-400 text-white'
+                    : 'border-green-300 bg-white text-green-900'
+                  : 'border-green-300 bg-white text-green-900 hover:scale-105 hover:bg-green-200 active:bg-green-300'
+              }`}
+              onClick={() => handleAnswer(answer)}
+              disabled={showFeedback || isPaused}
+            >
+              {answer}
+              {showFeedback && isCorrect && answer === currentQuestion.answer && ' 🟩'}
+              {showFeedback && selectedAnswer === answer && answer !== currentQuestion.answer && ' ❌'}
+            </button>
+          ))}
+        </div>
+
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border-2 border-green-900 bg-green-800/70 px-6 py-2 text-lg font-bold text-white shadow"
         >
-          {isPaused ? '▶' : '⏸'}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-3xl mb-4 text-sm md:text-base font-bold text-green-950">
-        <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Goal here: {currentEncounter.questionCount} questions
-        </div>
-        <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Remaining here: {questionsRemaining}
-        </div>
-        <div className="rounded-xl bg-white/85 px-4 py-3 border-2 border-green-600 shadow">
-          Total misses: {(adventure?.totalWrongQuestions ?? 0) + wrongQuestionsCount}/{MAX_WRONG_QUESTIONS}
+          Attempts: {attempts}/{MAX_ATTEMPTS_PER_QUESTION}
         </div>
       </div>
 
-      <div className="w-full max-w-2xl bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 mb-4 flex flex-col items-center border-4 border-green-700">
-        <div className="text-sm md:text-base font-extrabold uppercase tracking-wide text-green-700 mb-2">
-          {currentEncounter.icon} {currentEncounter.title}
-        </div>
-        <p className="text-base md:text-lg font-semibold text-green-900 text-center mb-4">
-          {currentEncounter.description}
-        </p>
-        <h2 className="text-2xl md:text-3xl font-bold text-green-900 text-center mb-2 drop-shadow">
-          {currentQuestion.question}
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mb-8">
-        {answers.map((answer, index) => (
-          <button
-            key={index}
-            className={`w-full py-5 text-2xl font-bold rounded-xl border-4 transition shadow-xl
-              ${showFeedback
-                ? isCorrect && answer === currentQuestion.answer
-                  ? 'bg-green-400 border-green-700 text-white scale-105'
-                  : selectedAnswer === answer && answer !== currentQuestion.answer
-                  ? 'bg-red-400 border-red-700 text-white shake'
-                  : 'bg-white border-green-300 text-green-900'
-                : 'bg-white border-green-300 text-green-900 hover:bg-green-200 hover:scale-105 active:bg-green-300'}
-            `}
-            onClick={() => handleAnswer(answer)}
-            disabled={showFeedback || isPaused}
-          >
-            {answer}
-            {showFeedback && isCorrect && answer === currentQuestion.answer && ' 🟩'}
-            {showFeedback && selectedAnswer === answer && answer !== currentQuestion.answer && ' ❌'}
-          </button>
-        ))}
-      </div>
-
-      <div
-        role="status"
-        aria-live="polite"
-        className="text-lg font-bold text-white bg-green-800 bg-opacity-70 rounded-xl px-6 py-2 shadow border-2 border-green-900"
-      >
-        Attempts: {attempts}/{MAX_ATTEMPTS_PER_QUESTION}
-      </div>
       {isPaused && (
-        <div className="mt-4 text-base font-bold text-white bg-green-900/80 rounded-xl px-5 py-3 border border-green-950">
-          Game paused. Tap play to continue.
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-green-950/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[2rem] border-4 border-green-950/35 bg-white p-6 text-green-950 shadow-2xl">
+            <div className="text-sm font-black uppercase tracking-[0.18em] text-green-800/70">Adventure menu</div>
+            <h3 className="mt-2 text-3xl font-black text-green-950">Adventure paused</h3>
+            <p className="mt-3 text-base font-semibold leading-7 text-green-900/85">
+              You are at {currentEncounter.title}. Resume when you are ready, or head back without losing the overall app state.
+            </p>
+
+            <div className="mt-5 rounded-2xl border-2 border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-900">
+              Current run: {questionsAnswered} answered · {score} bananas · {(adventure?.totalWrongQuestions ?? 0) + wrongQuestionsCount} misses
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                className="w-full rounded-2xl border-4 border-orange-700 bg-gradient-to-b from-orange-300 to-orange-500 px-5 py-4 text-left text-xl font-black text-white shadow-lg transition hover:-translate-y-1 hover:from-orange-200 hover:to-orange-400"
+                onClick={() => setIsPaused(false)}
+              >
+                Resume Adventure
+              </button>
+              <button
+                className="w-full rounded-2xl border-4 border-green-700 bg-white px-5 py-4 text-left text-lg font-black text-green-950 shadow transition hover:-translate-y-1 hover:bg-green-50"
+                onClick={() => navigate('/map')}
+              >
+                Back to Map
+              </button>
+              <button
+                className="w-full rounded-2xl border-4 border-green-700 bg-white px-5 py-4 text-left text-lg font-black text-green-950 shadow transition hover:-translate-y-1 hover:bg-green-50"
+                onClick={() => navigate('/levels')}
+              >
+                Return to Level Select
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
